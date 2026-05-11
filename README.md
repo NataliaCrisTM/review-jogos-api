@@ -28,20 +28,6 @@ Além dos endpoints JSON, o projeto conta com uma página web em `/games-view` q
 
 ---
 
-## 🛠 Stack Tecnológica
-
-| Tecnologia | Versão | Função |
-|---|---|---|
-| [Node.js](https://nodejs.org/) | 18+ | Runtime |
-| [Express](https://expressjs.com/) | ^4.19 | Framework web |
-| [lowdb](https://github.com/typicode/lowdb) | ^7.0 | Banco de dados em arquivo JSON |
-| [express-validator](https://express-validator.github.io/) | ^7.2 | Validação de requisições |
-| [Pug](https://pugjs.org/) | ^3.0 | Template engine (SSR) |
-| [uuid](https://github.com/uuidjs/uuid) | ^10.0 | Geração de IDs únicos |
-
-> O projeto usa **ES Modules** (`import`/`export`) nativos do Node.js — sem TypeScript, sem ORM, sem banco relacional.
-
----
 
 ## 🏗 Arquitetura
 
