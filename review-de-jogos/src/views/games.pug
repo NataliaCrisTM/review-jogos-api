@@ -1,0 +1,46 @@
+extends layouts/main.pug
+
+block content
+  if games.length === 0
+    .empty
+      p.empty__icon 📭
+      p.empty__text Nenhum jogo cadastrado ainda.
+      p.empty__hint Adicione jogos pela API para vê-los aqui.
+
+  else
+    .stats
+      p.stats__text
+        | Total: 
+        strong #{games.length}
+        |  #{games.length === 1 ? 'jogo' : 'jogos'} na coleção
+
+    .grid
+      each game in games
+        article.card
+          header.card__header
+            .card__badges
+              span.badge.badge--platform #{game.plataforma}
+              span.badge.badge--genre #{game.genero}
+            span.card__status(class=`card__status--${game.status.replace(' ', '-')}`)
+              = game.status
+
+          .card__body
+            h2.card__title #{game.titulo}
+            p.card__date Adicionado em #{new Date(game.dataAdicionado).toLocaleDateString('pt-BR')}
+
+          footer.card__footer
+            if game.review
+              .review
+                .review__header
+                  span.review__label ⭐ Review
+                  span.review__nota Nota: 
+                    strong #{game.review.nota}
+                    | /10
+                p.review__comentario #{game.review.comentario}
+                .review__meta
+                  span 🕐 #{game.review.horasJogadas}h jogadas
+                  span 📅 #{new Date(game.review.dataCriacao).toLocaleDateString('pt-BR')}
+            else
+              .no-review
+                span.no-review__icon 📝
+                p.no-review__text Sem review ainda.

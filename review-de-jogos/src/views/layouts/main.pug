@@ -1,0 +1,18 @@
+doctype html
+html(lang='pt-BR')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title= titulo
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    header.header
+      .header__inner
+        span.header__icon 🎮
+        h1.header__title= titulo
+
+    main.main
+      block content
+
+    footer.footer
+      p Coleção de Jogos &copy; #{new Date().getFullYear()}
