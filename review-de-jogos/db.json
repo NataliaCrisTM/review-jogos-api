@@ -1,0 +1,30 @@
+{
+  "games": [
+    {
+      "id": "0d4fb1f6-1c21-4580-903c-c33c67bd162c",
+      "titulo": "Far cry 5",
+      "plataforma": "PC",
+      "genero": "FPS",
+      "status": "zerado",
+      "dataAdicionado": "2026-05-12T11:44:12.895Z"
+    },
+    {
+      "id": "38b12948-52b0-4054-b49d-530aab65ec60",
+      "titulo": "Assassins creed",
+      "plataforma": "PS5, PC",
+      "genero": "ação, rpg, aventura",
+      "status": "zerado",
+      "dataAdicionado": "2026-05-12T11:45:57.396Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "57a7d9bc-ba2d-4a55-8886-95bcf045dc20",
+      "gameId": "0d4fb1f6-1c21-4580-903c-c33c67bd162c",
+      "nota": 9,
+      "comentario": "História e dinâmica muito boa",
+      "horasJogadas": 50,
+      "dataCriacao": "2026-05-12T11:44:36.052Z"
+    }
+  ]
+}

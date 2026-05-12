@@ -1,0 +1,262 @@
+/* ─── Toolbar ──────────────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbar__left .stats__text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* ─── Botões ───────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.55rem 1.1rem;
+  transition: opacity 0.15s, transform 0.1s, background 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn--primary:hover:not(:disabled) { background: var(--accent-light); }
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.btn--ghost:hover:not(:disabled) { background: rgba(255,255,255,0.05); color: var(--text); }
+
+.btn--outline {
+  background: transparent;
+  color: var(--accent-light);
+  border: 1px solid rgba(108,99,255,0.4);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.75rem;
+}
+.btn--outline:hover:not(:disabled) { background: rgba(108,99,255,0.1); }
+
+.btn--danger {
+  background: #e53e3e;
+  color: #fff;
+}
+.btn--danger:hover:not(:disabled) { background: #fc8181; }
+
+.btn--danger-ghost {
+  background: transparent;
+  color: #fc8181;
+  border: 1px solid rgba(252,129,129,0.3);
+}
+.btn--danger-ghost:hover:not(:disabled) { background: rgba(252,129,129,0.1); }
+
+.btn--xs {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+/* ─── Ações do card ────────────────────────────────────────────────────────── */
+.card__game-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1.25rem 0.75rem;
+}
+
+.review__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* ─── Modal overlay ────────────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(3px);
+}
+
+.modal-overlay--active {
+  display: flex;
+}
+
+/* ─── Modal ────────────────────────────────────────────────────────────────── */
+.modal {
+  background: #1a1d2e;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalEntrar 0.2s ease;
+}
+
+.modal--sm { max-width: 360px; }
+
+@keyframes modalEntrar {
+  from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.modal__close:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+
+.modal__body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── Formulário ───────────────────────────────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.form-input {
+  background: #12151f;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.92rem;
+  padding: 0.6rem 0.85rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+  width: 100%;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+}
+
+.form-input::placeholder { color: var(--text-dim); }
+
+.form-input--textarea {
+  resize: vertical;
+  min-height: 90px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+select.form-input option {
+  background: #1a1d2e;
+  color: var(--text);
+}
+
+.form-error {
+  font-size: 0.78rem;
+  color: #fc8181;
+  min-height: 1em;
+}
+
+.form-error--global {
+  text-align: center;
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+.form-game-nome {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-light);
+}
+
+/* ─── Nota preview ─────────────────────────────────────────────────────────── */
+.nota-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nota-wrapper .form-input {
+  max-width: 120px;
+}
+
+.nota-preview {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fbbf24;
+  min-width: 3rem;
+}
+
+/* ─── Confirmação ──────────────────────────────────────────────────────────── */
+.confirm-msg {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ─── Loading sta

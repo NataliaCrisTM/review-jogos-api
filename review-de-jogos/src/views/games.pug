@@ -1,46 +1,118 @@
 extends layouts/main.pug
 
 block content
-  if games.length === 0
-    .empty
-      p.empty__icon 📭
-      p.empty__text Nenhum jogo cadastrado ainda.
-      p.empty__hint Adicione jogos pela API para vê-los aqui.
 
-  else
-    .stats
+  //- ── Toolbar ──────────────────────────────────────────────────────────────
+  .toolbar
+    .toolbar__left
       p.stats__text
-        | Total: 
-        strong #{games.length}
-        |  #{games.length === 1 ? 'jogo' : 'jogos'} na coleção
+        span#game-count 0
+        |  jogos na coleção
+    .toolbar__right
+      button.btn.btn--primary#btn-novo-game(onclick='abrirModalGame()') + Novo Jogo
 
-    .grid
-      each game in games
-        article.card
-          header.card__header
-            .card__badges
-              span.badge.badge--platform #{game.plataforma}
-              span.badge.badge--genre #{game.genero}
-            span.card__status(class=`card__status--${game.status.replace(' ', '-')}`)
-              = game.status
+  //- ── Grid de cards (preenchido pelo JS) ───────────────────────────────────
+  .grid#grid-games
 
-          .card__body
-            h2.card__title #{game.titulo}
-            p.card__date Adicionado em #{new Date(game.dataAdicionado).toLocaleDateString('pt-BR')}
+  //- ── Empty state (visível quando não há jogos) ────────────────────────────
+  .empty#empty-state(style='display:none')
+    p.empty__icon 📭
+    p.empty__text Nenhum jogo cadastrado ainda.
+    p.empty__hint Clique em "+ Novo Jogo" para começar.
 
-          footer.card__footer
-            if game.review
-              .review
-                .review__header
-                  span.review__label ⭐ Review
-                  span.review__nota Nota: 
-                    strong #{game.review.nota}
-                    | /10
-                p.review__comentario #{game.review.comentario}
-                .review__meta
-                  span 🕐 #{game.review.horasJogadas}h jogadas
-                  span 📅 #{new Date(game.review.dataCriacao).toLocaleDateString('pt-BR')}
-            else
-              .no-review
-                span.no-review__icon 📝
-                p.no-review__text Sem review ainda.
+  //- ── Loading ──────────────────────────────────────────────────────────────
+  .empty#loading-state
+    p.empty__icon ⏳
+    p.empty__text Carregando coleção...
+
+  //- ══ MODAL — Game ═════════════════════════════════════════════════════════
+  .modal-overlay#modal-game(onclick='fecharSeOverlay(event,"modal-game")')
+    .modal
+      .modal__header
+        h2.modal__title#modal-game-titulo Novo Jogo
+        button.modal__close(onclick='fecharModal("modal-game")') ✕
+
+      .modal__body
+        .form-group
+          label.form-label(for='input-titulo') Título *
+          input.form-input#input-titulo(type='text' placeholder='Ex: The Witcher 3' maxlength='100')
+          span.form-error#erro-titulo
+
+        .form-group
+          label.form-label(for='input-plataforma') Plataforma *
+          input.form-input#input-plataforma(type='text' placeholder='Ex: PC, PS5, Xbox, Nintendo Switch' maxlength='50')
+          span.form-error#erro-plataforma
+
+        .form-group
+          label.form-label(for='input-genero') Gênero *
+          input.form-input#input-genero(type='text' placeholder='Ex: RPG, FPS, Aventura' maxlength='50')
+          span.form-error#erro-genero
+
+        .form-group
+          label.form-label(for='input-status') Status *
+          select.form-input#input-status
+            option(value='na fila') Na fila
+            option(value='jogando') Jogando
+            option(value='zerado') Zerado
+            option(value='abandonado') Abandonado
+
+        p.form-error.form-error--global#erro-game-global
+
+      .modal__footer
+        button.btn.btn--ghost(onclick='fecharModal("modal-game")') Cancelar
+        button.btn.btn--primary#btn-salvar-game(onclick='salvarGame()') Salvar
+
+  //- ══ MODAL — Review ═══════════════════════════════════════════════════════
+  .modal-overlay#modal-review(onclick='fecharSeOverlay(event,"modal-review")')
+    .modal
+      .modal__header
+        h2.modal__title#modal-review-titulo Nova Review
+        button.modal__close(onclick='fecharModal("modal-review")') ✕
+
+      .modal__body
+        .form-group
+          label.form-label Jogo
+          p.form-game-nome#review-game-nome —
+
+        .form-group
+          label.form-label(for='input-nota') Nota (0 – 10) *
+          .nota-wrapper
+            input.form-input#input-nota(type='number' min='0' max='10' step='0.5' placeholder='Ex: 8.5')
+            span.nota-preview#nota-preview —
+          span.form-error#erro-nota
+
+        .form-group
+          label.form-label(for='input-comentario') Comentário *
+          textarea.form-input.form-input--textarea#input-comentario(
+            placeholder='Conte o que achou do jogo...'
+            rows='4'
+            maxlength='500'
+          )
+          span.form-hint#comentario-hint 0 / 500
+          span.form-error#erro-comentario
+
+        .form-group
+          label.form-label(for='input-horas') Horas Jogadas *
+          input.form-input#input-horas(type='number' min='0' step='0.5' placeholder='Ex: 120')
+          span.form-error#erro-horas
+
+        p.form-error.form-error--global#erro-review-global
+
+      .modal__footer
+        button.btn.btn--ghost(onclick='fecharModal("modal-review")') Cancelar
+        button.btn.btn--primary#btn-salvar-review(onclick='salvarReview()') Salvar
+
+  //- ══ MODAL — Confirmação de delete ═══════════════════════════════════════
+  .modal-overlay#modal-confirm(onclick='fecharSeOverlay(event,"modal-confirm")')
+    .modal.modal--sm
+      .modal__header
+        h2.modal__title ⚠️ Confirmar exclusão
+        button.modal__close(onclick='fecharModal("modal-confirm")') ✕
+      .modal__body
+        p.confirm-msg#confirm-msg Tem certeza que deseja excluir?
+      .modal__footer
+        button.btn.btn--ghost(onclick='fecharModal("modal-confirm")') Cancelar
+        button.btn.btn--danger#btn-confirm-delete Confirmar
+
+block scripts
+  script(src='/js/main.js')
