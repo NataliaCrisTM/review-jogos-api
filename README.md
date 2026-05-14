@@ -1,17 +1,15 @@
-# 🎮 Game Collection API
+# 🎮 Review de jogos API
 
-Uma API RESTful para gerenciar sua coleção pessoal de jogos e reviews, construída com Node.js e Express. Inclui interface web renderizada no servidor para visualizar sua biblioteca.
+Uma API para gerenciar sua coleção pessoal de jogos e reviews, construída com Node.js e Express. Inclui uma interface web interativa em /games-view que permite criar, editar e excluir jogos e reviews diretamente pelo navegador, sem precisar de Postman ou qualquer outra ferramenta.
 
 ---
 
 ## 📋 Índice
 
 - [Sobre o Projeto](#-sobre-o-projeto)
-- [Stack Tecnológica](#-stack-tecnológica)
 - [Arquitetura](#-arquitetura)
-- [Pré-requisitos](#-pré-requisitos)
-- [Instalação](#-instalação)
 - [Como Usar](#-como-usar)
+- [Interface Web](#-interface-web)
 - [Rotas da API](#-rotas-da-api)
 - [Exemplos de Requisições](#-exemplos-de-requisições)
 - [Regras de Negócio](#-regras-de-negócio)
@@ -22,10 +20,11 @@ Uma API RESTful para gerenciar sua coleção pessoal de jogos e reviews, constru
 
 ## 💡 Sobre o Projeto
 
-O Game Collection API permite catalogar jogos com informações como plataforma, gênero e status de progresso (`na fila`, `jogando`, `zerado`, `abandonado`). Cada jogo pode ter **uma review** associada, com nota, comentário e horas jogadas.
+A Review de jogos API permite catalogar jogos com informações como plataforma, gênero e status de progresso (`na fila`, `jogando`, `zerado`, `abandonado`). Cada jogo pode ter uma review associada, com nota, comentário e horas jogadas.
 
-Além dos endpoints JSON, o projeto conta com uma página web em `/games-view` que exibe a coleção completa com suas reviews em cards estilizados.
-
+Há duas formas de uso:
+- **API REST:** endpoints JSON para integração com outros sistemas ou ferramentas como Postman
+- **Interface Web:** página interativa com formulários, modais e cards, consumindo a própria API via `fetch()`
 ---
 
 
@@ -47,41 +46,6 @@ Cada camada tem uma responsabilidade única:
 - **DTOs** — formatam o objeto antes de enviar ao cliente
 - **ErrorMiddleware** — captura todos os erros em um único lugar
 
----
-
-## ✅ Pré-requisitos
-
-- **Node.js** v18 ou superior
-- **npm** v8 ou superior
-
----
-
-## 🚀 Instalação
-
-```bash
-# 1. Clone o repositório
-git clone https://github.com/seu-usuario/game-collection-api.git
-
-# 2. Entre na pasta
-cd game-collection-api
-
-# 3. Instale as dependências
-npm install
-
-# 4. Inicie o servidor
-npm run dev
-```
-
-O servidor estará disponível em `http://localhost:3000`.
-
-> O arquivo `db.json` é criado automaticamente na raiz do projeto na primeira execução.
-
-### Scripts disponíveis
-
-| Comando | Descrição |
-|---|---|
-| `npm run dev` | Inicia com `--watch` (reinicia ao salvar) |
-| `npm start` | Inicia em modo produção |
 
 ---
 
@@ -95,7 +59,31 @@ Após iniciar o servidor, você tem acesso a:
 | API Reviews | `http://localhost:3000/api/reviews` |
 | Página Web | `http://localhost:3000/games-view` |
 
-Use o [Postman](https://www.postman.com/), [Insomnia](https://insomnia.rest/) ou `curl` para interagir com a API.
+---
+
+## 🖥 Interface Web
+
+A página `/games-view` oferece CRUD completo de jogos e reviews sem sair do navegador.
+
+### Funcionalidades
+
+| Ação | Como funciona |
+|---|---|
+| **Visualizar coleção** | Cards com todas as informações do jogo e sua review |
+| **Novo jogo** | Botão "+ Novo Jogo" abre modal com formulário |
+| **Editar jogo** | Botão ✏️ no card abre modal pré-preenchido |
+| **Excluir jogo** | Botão 🗑️ abre modal de confirmação antes de deletar |
+| **Adicionar review** | Botão aparece no card quando o jogo ainda não tem review |
+| **Editar review** | Botão ✏️ na seção de review do card |
+| **Excluir review** | Botão 🗑️ na seção de review com confirmação |
+
+### Como funciona por baixo
+
+- O Pug renderiza a estrutura HTML (toolbar, grid vazio, modais) no servidor
+- Ao carregar a página, `main.js` faz `GET /api/games` e `GET /api/reviews` em paralelo
+- Os cards são montados dinamicamente no navegador com os dados recebidos
+- Criar, editar e excluir chamam os endpoints da API via `fetch()` e atualizam a tela sem recarregar a página
+- Validações acontecem no front antes de chamar a API, com mensagens de erro inline em cada campo
 
 ---
 
@@ -126,7 +114,7 @@ Use o [Postman](https://www.postman.com/), [Insomnia](https://insomnia.rest/) ou
 
 | Método | Rota | Descrição |
 |---|---|---|
-| `GET` | `/games-view` | Exibe a coleção em HTML |
+| `GET` | `/games-view` | Exibe a interface interativa da coleção |
 
 ---
 
@@ -256,8 +244,11 @@ Content-Type: application/json
 ```
 /
 ├── public/
-│   └── css/
-│       └── style.css           # Estilos da página web
+│   ├── css/
+│   │   ├── style.css           # Estilos base da página web
+│   │   └── modal.css           # Estilos dos modais, botões e formulários
+│   └── js/
+│       └── main.js             # Lógica CRUD da interface via fetch()
 ├── src/
 │   ├── server.js               # Ponto de entrada — app.listen()
 │   ├── app.js                  # Configuração do Express
@@ -287,11 +278,10 @@ Content-Type: application/json
 │   └── views/
 │       ├── layouts/
 │       │   └── main.pug        # Layout base HTML
-│       └── games.pug           # Página da coleção
+│       └── games.pug           # Estrutura da interface interativa
 ├── db.json                     # Banco de dados (gerado automaticamente)
 └── package.json
 ```
-
 ---
 
 ## 📦 Padrões de Resposta
@@ -316,7 +306,3 @@ Todas as respostas de erro seguem o formato:
 | `500` | Erro interno do servidor |
 
 ---
-
-<div align="center">
-  <sub>Feito com ☕ e Node.js</sub>
-</div>
