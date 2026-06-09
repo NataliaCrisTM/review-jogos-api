@@ -34,6 +34,7 @@ export class AuthController {
         userId: usuario.id,
         login:  usuario.login,
         nome:   usuario.nome,
+        role: usuario.role,
       };
 
       const token = jwt.sign(payload, CHAVE_SECRETA, {

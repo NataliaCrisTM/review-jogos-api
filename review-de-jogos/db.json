@@ -15,6 +15,14 @@
       "genero": "ação, rpg, aventura",
       "status": "zerado",
       "dataAdicionado": "2026-05-12T11:45:57.396Z"
+    },
+    {
+      "id": "02ac62c3-48c5-49d9-aa27-1686ab43aa99",
+      "titulo": "Elden Ring",
+      "plataforma": "PC",
+      "genero": "RPG",
+      "status": "jogando",
+      "dataAdicionado": "2026-06-09T23:11:15.490Z"
     }
   ],
   "reviews": [
@@ -32,13 +40,15 @@
       "id": "user_01",
       "login": "admin",
       "senha": "admin321",
-      "nome": "Administrador"
+      "nome": "Administrador",
+      "role": "admin"
     },
     {
       "id": "user_02",
       "login": "jogador1",
       "senha": "senha123",
-      "nome": "Jogador Um"
+      "nome": "Jogador Um",
+      "role": "user"
     }
   ]
 }
