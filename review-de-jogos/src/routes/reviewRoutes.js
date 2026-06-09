@@ -6,6 +6,7 @@ import {
   validarIdReview,
   validarGameIdReview,
 } from '../middlewares/reviewValidator.js';
+import { autenticar } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
@@ -14,8 +15,8 @@ router.get('/game/:gameId', validarGameIdReview, ReviewController.getByGameId);
 
 router.get('/', ReviewController.getAll);
 router.get('/:id', validarIdReview, ReviewController.getById);
-router.post('/', validarCriarReview, ReviewController.create);
-router.put('/:id', validarAtualizarReview, ReviewController.update);
-router.delete('/:id', validarIdReview, ReviewController.delete);
+router.post('/', autenticar, validarCriarReview, ReviewController.create);
+router.put('/:id', autenticar, validarAtualizarReview, ReviewController.update);
+router.delete('/:id', autenticar, validarIdReview, ReviewController.delete);
 
 export default router;

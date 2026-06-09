@@ -5,13 +5,14 @@ import {
   validarAtualizarGame,
   validarIdGame,
 } from '../middlewares/gameValidator.js';
+import { autenticar } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
 router.get('/', GameController.getAll);
 router.get('/:id', validarIdGame, GameController.getById);
-router.post('/', validarCriarGame, GameController.create);
-router.put('/:id', validarAtualizarGame, GameController.update);
-router.delete('/:id', validarIdGame, GameController.delete);
+router.post('/', autenticar, validarCriarGame, GameController.create);
+router.put('/:id', autenticar, validarAtualizarGame, GameController.update);
+router.delete('/:id', autenticar, validarIdGame, GameController.delete);
 
 export default router;

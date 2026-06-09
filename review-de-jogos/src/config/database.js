@@ -10,6 +10,7 @@ const dbPath = join(__dirname, '../../db.json');
 const defaultData = {
   games: [],
   reviews: [],
+  users: [],
 };
 
 const db = await JSONFilePreset(dbPath, defaultData);

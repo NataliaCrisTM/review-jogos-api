@@ -4,7 +4,9 @@ import { dirname, join } from 'path';
 import gameRoutes from './routes/gameRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import webRoutes from './routes/webRoutes.js';
+import authRoutes   from './routes/authRoutes.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
+import { autenticar } from './middlewares/authMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,6 +28,9 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// ─── Rota pública de autenticação (SEM autenticar) ────────────────
+app.use('/api/auth', authRoutes);                          // ← NOVO
 
 // ─── Rotas da API ─────────────────────────────────────────────────────────────
 app.use('/api/games', gameRoutes);

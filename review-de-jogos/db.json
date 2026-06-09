@@ -26,5 +26,19 @@
       "horasJogadas": 50,
       "dataCriacao": "2026-05-12T11:44:36.052Z"
     }
+  ],
+  "users": [
+    {
+      "id": "user_01",
+      "login": "admin",
+      "senha": "admin321",
+      "nome": "Administrador"
+    },
+    {
+      "id": "user_02",
+      "login": "jogador1",
+      "senha": "senha123",
+      "nome": "Jogador Um"
+    }
   ]
 }
