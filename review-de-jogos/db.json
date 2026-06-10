@@ -39,14 +39,14 @@
     {
       "id": "user_01",
       "login": "admin",
-      "senha": "admin321",
+      "senha": "$2b$10$65Ecdb6DC2SboFmDetp1fOhlspzrW7uc7t5nn3jnKZnE1JTLQO77u",
       "nome": "Administrador",
       "role": "admin"
     },
     {
       "id": "user_02",
       "login": "jogador1",
-      "senha": "senha123",
+      "senha": "$2b$10$V5wOWJS6snTA4GbCVkhRfup2ls2WgMflVwMeaRS69/75Pae19RS/i",
       "nome": "Jogador Um",
       "role": "user"
     }

@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import userRepository from '../repositories/userRepository.js';
 
@@ -22,7 +23,11 @@ export class AuthController {
       const usuario = userRepository.findByLogin(login);
 
       // 3. Verifica se existe e se a senha bate
-      if (!usuario || usuario.senha !== senha) {
+      const senhaValida = usuario
+        ? await bcrypt.compare(senha, usuario.senha)
+        : false;
+
+      if (!senhaValida) {
         return res.status(401).json({
           sucesso: false,
           mensagem: 'Login ou senha inválidos.',
