@@ -3,6 +3,10 @@ import { WebController } from '../controllers/webController.js';
 
 const router = Router();
 
+router.get('/', (req, res) => {
+  res.redirect('/games-view');
+});
+
 router.get('/games-view', WebController.gamesView);
 
 export default router;
