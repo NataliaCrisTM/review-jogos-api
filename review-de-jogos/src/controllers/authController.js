@@ -20,12 +20,15 @@ export class AuthController {
       }
 
       // 2. Busca o usuário no banco
-      const usuario = userRepository.findByLogin(login);
+      const usuario = await userRepository.findByLogin(login);
+      console.log('USUARIO ENCONTRADO:', usuario);
 
       // 3. Verifica se existe e se a senha bate
       const senhaValida = usuario
         ? await bcrypt.compare(senha, usuario.senha)
         : false;
+        console.log('SENHA RECEBIDA:', senha);
+        console.log('SENHA VALIDA:', senhaValida);
 
       if (!senhaValida) {
         return res.status(401).json({

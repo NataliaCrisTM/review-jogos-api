@@ -19,7 +19,7 @@ const regrasReview = [
   body('gameId')
     .trim()
     .notEmpty().withMessage('O gameId é obrigatório.')
-    .isUUID().withMessage('O gameId deve ser um UUID válido.'),
+    .isMongoId().withMessage('O gameId deve ser um UUID válido.'),
 
   body('nota')
     .notEmpty().withMessage('A nota é obrigatória.')
@@ -52,12 +52,12 @@ const regrasAtualizarReview = [
 
 const regraId = [
   param('id')
-    .isUUID().withMessage('O id informado não é um UUID válido.'),
+    .isMongoId().withMessage('O id informado não é um UUID válido.'),
 ];
 
 const regraGameId = [
   param('gameId')
-    .isUUID().withMessage('O gameId informado não é um UUID válido.'),
+    .isMongoId().withMessage('O gameId informado não é um UUID válido.'),
 ];
 
 export const validarCriarReview = [...regrasReview, validar];

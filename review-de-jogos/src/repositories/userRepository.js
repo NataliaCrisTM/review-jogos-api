@@ -1,9 +1,11 @@
 import db from '../config/database.js';
 
+const collection = db.collection('users');
+
 const userRepository = {
 
-  findByLogin(login) {
-    return db.data.users.find(u => u.login === login) ?? null;
+  async findByLogin(login) {
+    return await collection.findOne({ login });
   },
 
 };

@@ -1,0 +1,377 @@
+===================================================================
+TESTES DA API - REVIEW DE JOGOS
+===================================================================
+Ferramenta: Thunder Client
+Base URL:   http://localhost:3000
+
+Antes de começar, faça login para obter os tokens:
+
+POST /api/auth/login
+Body:
+{ "login": "admin", "senha": "admin321" }
+-> copiar como TOKEN_ADMIN
+
+POST /api/auth/login
+Body:
+{ "login": "jogador1", "senha": "senha123" }
+-> copiar como TOKEN_USER
+
+===================================================================
+TESTE 1 - Listar games sem token (leitura pública)
+===================================================================
+Descrição: Confirma que a leitura da coleção de games é pública,
+não exigindo autenticação.
+
+Requisição:
+GET /api/games
+(sem header Authorization)
+
+Resultado esperado:
+Status 200 OK
+Corpo: array com os games cadastrados
+
+
+===================================================================
+TESTE 2 - Listar reviews sem token (leitura pública)
+===================================================================
+Descrição: Mesmo princípio do teste 1, aplicado às reviews.
+
+Requisição:
+GET /api/reviews
+(sem header Authorization)
+
+Resultado esperado:
+Status 200 OK
+Corpo: array com as reviews cadastradas
+
+
+===================================================================
+TESTE 3 - Buscar game por ID inexistente
+===================================================================
+Descrição: Usa um ObjectId com formato válido (24 caracteres
+hexadecimais), mas que não existe no banco. Testa o tratamento
+de erro 404 feito pelo gameService.
+
+Requisição:
+GET /api/games/000000000000000000000000
+
+Resultado esperado:
+Status 404 Not Found
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Game com id \"000000000000000000000000\" não encontrado."
+}
+
+
+===================================================================
+TESTE 4 - Buscar game por ID com formato inválido
+===================================================================
+Descrição: Envia um ID que não é um ObjectId válido. A validação
+(isMongoId()) deve bloquear antes de chegar ao service, evitando
+um erro 500.
+
+Requisição:
+GET /api/games/abc123
+
+Resultado esperado:
+Status 400 Bad Request
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Erro de validação.",
+  "erros": [
+    { "campo": "id", "mensagem": "..." }
+  ]
+}
+
+
+===================================================================
+TESTE 5 - Criar game com campo obrigatório faltando
+===================================================================
+Descrição: Tenta criar um game sem o campo "titulo". Testa a
+validação de campos obrigatórios.
+
+Requisição:
+POST /api/games
+Headers:
+  Authorization: Bearer TOKEN_ADMIN
+  Content-Type: application/json
+Body:
+{
+  "plataforma": "PC",
+  "genero": "RPG",
+  "status": "jogando"
+}
+
+Resultado esperado:
+Status 400 Bad Request
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Erro de validação.",
+  "erros": [
+    { "campo": "titulo", "mensagem": "..." }
+  ]
+}
+
+
+===================================================================
+TESTE 6 - Criar game com status inválido
+===================================================================
+Descrição: Envia um valor de "status" que não está entre os
+valores permitidos (na fila, jogando, zerado, abandonado).
+
+Requisição:
+POST /api/games
+Headers:
+  Authorization: Bearer TOKEN_ADMIN
+  Content-Type: application/json
+Body:
+{
+  "titulo": "Teste de Validacao",
+  "plataforma": "PC",
+  "genero": "RPG",
+  "status": "inventado"
+}
+
+Resultado esperado:
+Status 400 Bad Request
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Erro de validação.",
+  "erros": [
+    { "campo": "status", "mensagem": "..." }
+  ]
+}
+
+
+===================================================================
+TESTE 7 - Usuário comum tenta criar um game (RBAC)
+===================================================================
+Descrição: Usa o token de um usuário com role "user" para tentar
+criar um game. A rota exige role "admin", então deve ser bloqueada
+com 403 Forbidden (diferente de 401, pois o usuário ESTÁ
+autenticado, só não tem permissão).
+
+Requisição:
+POST /api/games
+Headers:
+  Authorization: Bearer TOKEN_USER
+  Content-Type: application/json
+Body:
+{
+  "titulo": "Hollow Knight",
+  "plataforma": "PC",
+  "genero": "Metroidvania",
+  "status": "zerado"
+}
+
+Resultado esperado:
+Status 403 Forbidden
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Acesso negado. Permissões insuficientes."
+}
+
+
+===================================================================
+TESTE 8 - Criar game sem token
+===================================================================
+Descrição: Tenta criar um game sem enviar o header Authorization.
+Testa o bloqueio do middleware de autenticação.
+
+Requisição:
+POST /api/games
+Headers:
+  Content-Type: application/json
+Body:
+{
+  "titulo": "Stardew Valley",
+  "plataforma": "PC",
+  "genero": "Simulação",
+  "status": "na fila"
+}
+
+Resultado esperado:
+Status 401 Unauthorized
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Token não fornecido."
+}
+
+
+===================================================================
+TESTE 9 - Editar (PUT) um game existente
+===================================================================
+Descrição: Atualiza os dados de um game já cadastrado, usando
+token de admin. Substituir <ID_DO_GAME> pelo "id" retornado ao
+criar o game (Teste de criação com sucesso já realizado).
+
+Requisição:
+PUT /api/games/<ID_DO_GAME>
+Headers:
+  Authorization: Bearer TOKEN_ADMIN
+  Content-Type: application/json
+Body:
+{
+  "titulo": "Hades II",
+  "plataforma": "PC",
+  "genero": "Roguelike",
+  "status": "zerado"
+}
+
+Resultado esperado:
+Status 200 OK
+Corpo: objeto do game atualizado, com "status": "zerado"
+
+
+===================================================================
+TESTE 10 - Criar segunda review para o mesmo game (conflito)
+===================================================================
+Descrição: Tenta criar uma segunda review para um game que já
+possui uma review cadastrada. Testa a regra de negócio de
+unicidade (cada game pode ter no máximo uma review).
+
+Requisição:
+POST /api/reviews
+Headers:
+  Authorization: Bearer TOKEN_ADMIN
+  Content-Type: application/json
+Body:
+{
+  "gameId": "<ID_DO_GAME_COM_REVIEW>",
+  "nota": 8,
+  "comentario": "Outra review para o mesmo jogo",
+  "horasJogadas": 10
+}
+
+Resultado esperado:
+Status 409 Conflict
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "O game \"<titulo>\" já possui uma review. Cada game pode ter no máximo uma review."
+}
+
+
+===================================================================
+TESTE 11 - Criar review para game inexistente
+===================================================================
+Descrição: Envia um gameId no formato válido, mas que não
+corresponde a nenhum game cadastrado.
+
+Requisição:
+POST /api/reviews
+Headers:
+  Authorization: Bearer TOKEN_ADMIN
+  Content-Type: application/json
+Body:
+{
+  "gameId": "000000000000000000000000",
+  "nota": 7,
+  "comentario": "Review de teste",
+  "horasJogadas": 5
+}
+
+Resultado esperado:
+Status 404 Not Found
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Game com id \"000000000000000000000000\" não encontrado."
+}
+
+
+===================================================================
+TESTE 12 - Buscar review pelo ID do game
+===================================================================
+Descrição: Usa a rota específica que busca a review associada a
+um determinado game.
+
+Requisição:
+GET /api/reviews/game/<ID_DO_GAME_COM_REVIEW>
+
+Resultado esperado:
+Status 200 OK
+Corpo: objeto da review correspondente ao game
+
+
+===================================================================
+TESTE 13 - Deletar game e verificar exclusão em cascata da review
+===================================================================
+Descrição: Deleta um game que possui review associada. A regra de
+negócio no gameService deve deletar a review junto (cascade
+delete).
+
+Requisição 1:
+DELETE /api/games/<ID_DO_GAME_COM_REVIEW>
+Headers:
+  Authorization: Bearer TOKEN_ADMIN
+
+Resultado esperado 1:
+Status 204 No Content (sem corpo)
+
+Requisição 2 (verificação):
+GET /api/reviews/game/<ID_DO_GAME_COM_REVIEW>
+
+Resultado esperado 2:
+Status 404 Not Found
+(a review foi removida junto com o game)
+
+
+===================================================================
+TESTE 14 - Acessar rota inexistente
+===================================================================
+Descrição: Testa o handler de 404 customizado do app.js para rotas
+que não existem em nenhum lugar da aplicação.
+
+Requisição:
+GET /api/inexistente
+
+Resultado esperado:
+Status 404 Not Found
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Rota não encontrada."
+}
+
+
+===================================================================
+TESTE 15 - Login com senha incorreta
+===================================================================
+Descrição: Testa o bloqueio de login com credenciais inválidas e
+o uso do bcrypt.compare() para validação segura da senha.
+
+Requisição:
+POST /api/auth/login
+Body:
+{
+  "login": "admin",
+  "senha": "senhaErrada123"
+}
+
+Resultado esperado:
+Status 401 Unauthorized
+Corpo:
+{
+  "sucesso": false,
+  "mensagem": "Login ou senha inválidos."
+}
+
+
+===================================================================
+RESUMO DOS CÓDIGOS HTTP TESTADOS
+===================================================================
+200 OK                  -> leitura e atualização com sucesso
+201 Created             -> criação com sucesso (game/review)
+204 No Content          -> deleção com sucesso
+400 Bad Request         -> erro de validação (campos/formato)
+401 Unauthorized        -> sem token ou credenciais inválidas
+403 Forbidden           -> autenticado, mas sem permissão (RBAC)
+404 Not Found           -> recurso ou rota não encontrada
+409 Conflict            -> regra de negócio violada (review duplicada)

@@ -1,19 +1,21 @@
 import db from '../config/database.js';
-import { v4 as uuidv4 } from 'uuid';
+import { ObjectId } from 'mongodb';
+
+const collection = db.collection('games');
 
 const gameRepository = {
 
-  findAll() {
-    return db.data.games;
+  async findAll() {
+    return await collection.find().toArray();
   },
 
-  findById(id) {
-    return db.data.games.find(game => game.id === id) ?? null;
+  async findById(id) {
+    if (!ObjectId.isValid(id)) return null;
+    return await collection.findOne({ _id: new ObjectId(id) });
   },
 
   async create(data) {
     const novoGame = {
-      id: uuidv4(),
       titulo: data.titulo,
       plataforma: data.plataforma,
       genero: data.genero,
@@ -21,34 +23,32 @@ const gameRepository = {
       dataAdicionado: new Date().toISOString(),
     };
 
-    db.data.games.push(novoGame);
-    await db.write();
-    return novoGame;
+    const resultado = await collection.insertOne(novoGame);
+    return { _id: resultado.insertedId, ...novoGame };
   },
 
   async update(id, data) {
-    const index = db.data.games.findIndex(game => game.id === id);
-    if (index === -1) return null;
+    if (!ObjectId.isValid(id)) return null;
 
-    db.data.games[index] = {
-      ...db.data.games[index],
-      titulo: data.titulo,
-      plataforma: data.plataforma,
-      genero: data.genero,
-      status: data.status,
-    };
+    const resultado = await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: {
+          titulo: data.titulo,
+          plataforma: data.plataforma,
+          genero: data.genero,
+          status: data.status,
+        } },
+      { returnDocument: 'after' }
+    );
 
-    await db.write();
-    return db.data.games[index];
+    return resultado;
   },
 
   async delete(id) {
-    const index = db.data.games.findIndex(game => game.id === id);
-    if (index === -1) return false;
+    if (!ObjectId.isValid(id)) return false;
 
-    db.data.games.splice(index, 1);
-    await db.write();
-    return true;
+    const resultado = await collection.deleteOne({ _id: new ObjectId(id) });
+    return resultado.deletedCount === 1;
   },
 
 };

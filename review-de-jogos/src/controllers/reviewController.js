@@ -5,7 +5,7 @@ export class ReviewController {
 
   static async getAll(req, res, next) {
     try {
-      const reviews = reviewService.getAll();
+      const reviews = await reviewService.getAll();
       res.status(200).json(reviews.map(r => new ReviewDto(r)));
     } catch (err) {
       next(err);
@@ -14,7 +14,7 @@ export class ReviewController {
 
   static async getById(req, res, next) {
     try {
-      const review = reviewService.getById(req.params.id);
+      const review = await reviewService.getById(req.params.id);
       res.status(200).json(new ReviewDto(review));
     } catch (err) {
       next(err);
@@ -23,7 +23,7 @@ export class ReviewController {
 
   static async getByGameId(req, res, next) {
     try {
-      const review = reviewService.getByGameId(req.params.gameId);
+      const review = await reviewService.getByGameId(req.params.gameId);
       res.status(200).json(new ReviewDto(review));
     } catch (err) {
       next(err);

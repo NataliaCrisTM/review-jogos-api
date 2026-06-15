@@ -39,7 +39,7 @@ const regrasGame = [
 
 const regraId = [
   param('id')
-    .isUUID().withMessage('O id informado não é um UUID válido.'),
+    .isMongoId().withMessage('O id informado não é um UUID válido.'),
 ];
 
 export const validarCriarGame = [...regrasGame, validar];

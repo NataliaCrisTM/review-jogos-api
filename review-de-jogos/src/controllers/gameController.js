@@ -5,7 +5,7 @@ export class GameController {
 
   static async getAll(req, res, next) {
     try {
-      const games = gameService.getAll();
+      const games = await gameService.getAll();
       res.status(200).json(games.map(g => new GameDto(g)));
     } catch (err) {
       next(err);
@@ -14,7 +14,7 @@ export class GameController {
 
   static async getById(req, res, next) {
     try {
-      const game = gameService.getById(req.params.id);
+      const game = await gameService.getById(req.params.id);
       res.status(200).json(new GameDto(game));
     } catch (err) {
       next(err);

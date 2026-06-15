@@ -9,30 +9,30 @@ const lancarErro = (mensagem, status) => {
 
 const reviewService = {
 
-  getAll() {
-    return reviewRepository.findAll();
+  async getAll() {
+    return await reviewRepository.findAll();
   },
 
-  getById(id) {
-    const review = reviewRepository.findById(id);
+  async getById(id) {
+    const review = await reviewRepository.findById(id);
     if (!review) lancarErro(`Review com id "${id}" não encontrada.`, 404);
     return review;
   },
 
-  getByGameId(gameId) {
-    const game = gameRepository.findById(gameId);
+  async getByGameId(gameId) {
+    const game = await gameRepository.findById(gameId);
     if (!game) lancarErro(`Game com id "${gameId}" não encontrado.`, 404);
 
-    const review = reviewRepository.findByGameId(gameId);
+    const review = await reviewRepository.findByGameId(gameId);
     if (!review) lancarErro(`Nenhuma review encontrada para o game "${game.titulo}".`, 404);
     return review;
   },
 
   async create(data) {
-    const game = gameRepository.findById(data.gameId);
+    const game = await gameRepository.findById(data.gameId);
     if (!game) lancarErro(`Game com id "${data.gameId}" não encontrado.`, 404);
 
-    const reviewExistente = reviewRepository.findByGameId(data.gameId);
+    const reviewExistente = await reviewRepository.findByGameId(data.gameId);
     if (reviewExistente) {
       lancarErro(
         `O game "${game.titulo}" já possui uma review. Cada game pode ter no máximo uma review.`,
@@ -44,14 +44,14 @@ const reviewService = {
   },
 
   async update(id, data) {
-    reviewService.getById(id);
+    await reviewService.getById(id);
     const reviewAtualizada = await reviewRepository.update(id, data);
     if (!reviewAtualizada) lancarErro(`Falha ao atualizar a review com id "${id}".`, 500);
     return reviewAtualizada;
   },
 
   async delete(id) {
-    reviewService.getById(id);
+    await reviewService.getById(id);
     const deletado = await reviewRepository.delete(id);
     if (!deletado) lancarErro(`Falha ao deletar a review com id "${id}".`, 500);
   },

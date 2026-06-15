@@ -6,12 +6,14 @@ export class WebController {
 
   static async gamesView(req, res, next) {
     try {
-      const games = gameService.getAll();
+      const games = await gameService.getAll();
 
-      const gamesComReview = games.map(game => {
-        const review = reviewRepository.findByGameId(game.id);
+      const gamesComReview = await Promise.all(
+      games.map(async game => {
+        const review = await reviewRepository.findByGameId(game.id);
         return new GameComReviewDto(game, review);
-      });
+      })
+    );
 
       res.render('games', {
         titulo: 'Minha Coleção de Jogos',

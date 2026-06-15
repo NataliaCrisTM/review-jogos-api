@@ -1,66 +1,59 @@
 import db from '../config/database.js';
-import { v4 as uuidv4 } from 'uuid';
+import { ObjectId } from 'mongodb';
+
+const collection = db.collection('reviews');
 
 const reviewRepository = {
 
-  findAll() {
-    return db.data.reviews;
+  async findAll() {
+    return await collection.find().toArray();
   },
 
-  findById(id) {
-    return db.data.reviews.find(review => review.id === id) ?? null;
+  async findById(id) {
+    if (!ObjectId.isValid(id)) return null;
+    return await collection.findOne({ _id: new ObjectId(id) });
   },
 
-  findByGameId(gameId) {
-    return db.data.reviews.find(review => review.gameId === gameId) ?? null;
+  async findByGameId(gameId) {
+    return await collection.findOne({ gameId });
   },
 
   async create(data) {
     const novaReview = {
-      id: uuidv4(),
-      gameId: data.gameId,
+      gameId: data.gameId,        // string — o _id do game, convertido
       nota: data.nota,
       comentario: data.comentario,
       horasJogadas: data.horasJogadas,
       dataCriacao: new Date().toISOString(),
     };
 
-    db.data.reviews.push(novaReview);
-    await db.write();
-    return novaReview;
+    const resultado = await collection.insertOne(novaReview);
+    return { _id: resultado.insertedId, ...novaReview };
   },
 
   async update(id, data) {
-    const index = db.data.reviews.findIndex(review => review.id === id);
-    if (index === -1) return null;
+    if (!ObjectId.isValid(id)) return null;
 
-    db.data.reviews[index] = {
-      ...db.data.reviews[index],
-      nota: data.nota,
-      comentario: data.comentario,
-      horasJogadas: data.horasJogadas,
-    };
-
-    await db.write();
-    return db.data.reviews[index];
+    return await collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: {
+          nota: data.nota,
+          comentario: data.comentario,
+          horasJogadas: data.horasJogadas,
+        } },
+      { returnDocument: 'after' }
+    );
   },
 
   async delete(id) {
-    const index = db.data.reviews.findIndex(review => review.id === id);
-    if (index === -1) return false;
-
-    db.data.reviews.splice(index, 1);
-    await db.write();
-    return true;
+    if (!ObjectId.isValid(id)) return false;
+    const resultado = await collection.deleteOne({ _id: new ObjectId(id) });
+    return resultado.deletedCount === 1;
   },
 
   async deleteByGameId(gameId) {
-    const index = db.data.reviews.findIndex(review => review.gameId === gameId);
-    if (index === -1) return false;
-
-    db.data.reviews.splice(index, 1);
-    await db.write();
-    return true;
+    const resultado = await collection.deleteOne({ gameId });
+    return resultado.deletedCount === 1;
   },
 
 };

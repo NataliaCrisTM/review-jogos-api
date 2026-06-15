@@ -1,6 +1,6 @@
 export class ReviewDto {
   constructor(review) {
-    this.id = review.id;
+    this.id = review._id.toString();
     this.gameId = review.gameId;
     this.nota = review.nota;
     this.comentario = review.comentario;
