@@ -1,2 +1,5 @@
 #ignorar node modules
 node_modules/
+
+#Ignorar arquivos de confiugracao locais
+.env
