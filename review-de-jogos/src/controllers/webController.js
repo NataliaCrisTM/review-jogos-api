@@ -10,8 +10,8 @@ export class WebController {
 
       const gamesComReview = await Promise.all(
       games.map(async game => {
-        const review = await reviewRepository.findByGameId(game.id);
-        return new GameComReviewDto(game, review);
+        const reviews = await reviewRepository.findAllByGameId(game._id);
+        return new GameComReviewDto(game, reviews[0] || null);
       })
     );
 

@@ -33,7 +33,7 @@ export class ReviewController {
   static async create(req, res, next) {
     try {
       const { gameId, nota, comentario, horasJogadas } = req.body;
-      const review = await reviewService.create({ gameId, nota, comentario, horasJogadas });
+      const review = await reviewService.create({ gameId, nota, comentario, horasJogadas }, req.usuario);
       res.status(201).json(new ReviewDto(review));
     } catch (err) {
       next(err);
@@ -43,7 +43,7 @@ export class ReviewController {
   static async update(req, res, next) {
     try {
       const { nota, comentario, horasJogadas } = req.body;
-      const review = await reviewService.update(req.params.id, { nota, comentario, horasJogadas });
+      const review = await reviewService.update(req.params.id, { nota, comentario, horasJogadas }, req.usuario);
       res.status(200).json(new ReviewDto(review));
     } catch (err) {
       next(err);
@@ -52,7 +52,7 @@ export class ReviewController {
 
   static async delete(req, res, next) {
     try {
-      await reviewService.delete(req.params.id);
+      await reviewService.delete(req.params.id, req.usuario);
       res.status(204).send();
     } catch (err) {
       next(err);

@@ -16,8 +16,8 @@ router.get('/game/:gameId', validarGameIdReview, ReviewController.getByGameId);
 
 router.get('/', ReviewController.getAll);
 router.get('/:id', validarIdReview, ReviewController.getById);
-router.post('/', autenticar, autorizar('admin'), validarCriarReview, ReviewController.create);
-router.put('/:id', autenticar, autorizar('admin'), validarAtualizarReview, ReviewController.update);
-router.delete('/:id', autenticar, autorizar('admin'), validarIdReview, ReviewController.delete);
+router.post('/', autenticar, autorizar('admin', 'user'), validarCriarReview, ReviewController.create);
+router.put('/:id', autenticar, autorizar('admin', 'user'), validarAtualizarReview, ReviewController.update);
+router.delete('/:id', autenticar, autorizar('admin', 'user'), validarIdReview, ReviewController.delete);
 
 export default router;

@@ -14,7 +14,7 @@ const gameService = {
   },
 
   async getById(id) {
-    const game = gameRepository.findById(id);
+    const game = await gameRepository.findById(id);
     if (!game) lancarErro(`Game com id "${id}" não encontrado.`, 404);
     return game;
   },

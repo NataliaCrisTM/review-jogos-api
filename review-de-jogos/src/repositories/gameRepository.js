@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import { ObjectId } from 'mongodb';
+import { game } from '../models/game.js';
 
 const collection = db.collection('games');
 
@@ -15,17 +16,12 @@ const gameRepository = {
   },
 
   async create(data) {
-    const novoGame = {
-      titulo: data.titulo,
-      plataforma: data.plataforma,
-      genero: data.genero,
-      status: data.status,
-      dataAdicionado: new Date().toISOString(),
-    };
-
-    const resultado = await collection.insertOne(novoGame);
-    return { _id: resultado.insertedId, ...novoGame };
-  },
+  const novoGame = new game(data);
+  const resultado = await collection.insertOne(novoGame);
+  //console.log(novoGame.constructor.name);
+  return { _id: resultado.insertedId, ...novoGame };
+  
+},
 
   async update(id, data) {
     if (!ObjectId.isValid(id)) return null;
@@ -52,5 +48,7 @@ const gameRepository = {
   },
 
 };
+
+
 
 export default gameRepository;

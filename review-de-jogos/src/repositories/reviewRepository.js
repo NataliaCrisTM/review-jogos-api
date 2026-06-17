@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import { ObjectId } from 'mongodb';
+import { review } from '../models/review.js';
 
 const collection = db.collection('reviews');
 
@@ -14,22 +15,19 @@ const reviewRepository = {
     return await collection.findOne({ _id: new ObjectId(id) });
   },
 
-  async findByGameId(gameId) {
-    return await collection.findOne({ gameId });
-  },
+  async findAllByGameId(gameId) {
+  return await collection.find({ gameId }).toArray();
+},
+
+async findByGameIdAndUserId(gameId, usuarioId) {
+  return await collection.findOne({ gameId, usuarioId });
+},
 
   async create(data) {
-    const novaReview = {
-      gameId: data.gameId,        // string — o _id do game, convertido
-      nota: data.nota,
-      comentario: data.comentario,
-      horasJogadas: data.horasJogadas,
-      dataCriacao: new Date().toISOString(),
-    };
-
-    const resultado = await collection.insertOne(novaReview);
-    return { _id: resultado.insertedId, ...novaReview };
-  },
+  const novaReview = new review(data);
+  const resultado = await collection.insertOne(novaReview);
+  return { _id: resultado.insertedId, ...novaReview };
+},
 
   async update(id, data) {
     if (!ObjectId.isValid(id)) return null;
@@ -52,9 +50,9 @@ const reviewRepository = {
   },
 
   async deleteByGameId(gameId) {
-    const resultado = await collection.deleteOne({ gameId });
-    return resultado.deletedCount === 1;
-  },
+  const resultado = await collection.deleteMany({ gameId });
+  return resultado.deletedCount;
+},
 
 };
 

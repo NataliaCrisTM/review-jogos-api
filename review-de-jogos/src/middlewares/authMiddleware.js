@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 
-const CHAVE_SECRETA = 'minha_chave_super_secreta_jwt';
+import 'dotenv/config';
+const CHAVE_SECRETA = process.env.JWT_SECRET;
 
 export const autenticar = (req, res, next) => {
 
