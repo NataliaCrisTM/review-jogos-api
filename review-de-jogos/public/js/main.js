@@ -14,6 +14,7 @@ const state = {
 //  Bootstrap
 // ═══════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  atualizarAuthUI();
   carregarTudo();
 
   // Preview ao vivo da nota
@@ -34,7 +35,88 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') fecharTodosModais();
   });
 });
+// ═══════════════════════════════════════════════════════════════════════════
+//  Autenticação
+// ═══════════════════════════════════════════════════════════════════════════
+function decodeBase64Url(str) {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = base64.length % 4;
+  if (pad) base64 += '='.repeat(4 - pad);
+  return base64;
+}
 
+function getUsuarioLogado() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    const payloadBase64 = decodeBase64Url(token.split('.')[1]);
+    // decodeURIComponent + escape garante que acentos (UTF-8) sejam lidos corretamente
+    const jsonPayload = decodeURIComponent(
+      atob(payloadBase64)
+        .split('')
+        .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error('Erro ao decodificar token do usuário:', e);
+    return null;
+  }
+}
+
+function atualizarAuthUI() {
+  const usuario = getUsuarioLogado();
+  const area = document.getElementById('auth-status');
+  if (usuario) {
+    area.innerHTML = `
+      <span class="auth-status__nome">${escapeHtml(usuario.nome)} <em>(${usuario.role})</em></span>
+      <button class="btn btn--xs btn--ghost" onclick="fazerLogout()">Sair</button>`;
+  } else {
+    area.innerHTML = `<button class="btn btn--xs btn--outline" onclick="abrirModalLogin()">Entrar</button>`;
+  }
+}
+
+function abrirModalLogin() {
+  document.getElementById('input-login').value = '';
+  document.getElementById('input-senha').value = '';
+  document.getElementById('erro-login-global').textContent = '';
+  abrirModal('modal-login');
+}
+
+async function fazerLogin() {
+  const login = document.getElementById('input-login').value.trim();
+  const senha = document.getElementById('input-senha').value;
+  const erro = document.getElementById('erro-login-global');
+  erro.textContent = '';
+
+  if (!login || !senha) {
+    erro.textContent = 'Informe login e senha.';
+    return;
+  }
+
+  const btn = document.getElementById('btn-fazer-login');
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+
+  try {
+    const res = await api('POST', '/api/auth/login', { login, senha });
+    localStorage.setItem('token', res.token);
+    fecharModal('modal-login');
+    atualizarAuthUI();
+    renderizarGrid();
+  } catch (err) {
+    erro.textContent = err.message || 'Login ou senha inválidos.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+
+function fazerLogout() {
+  localStorage.removeItem('token');
+  atualizarAuthUI();
+  renderizarGrid();
+}
 // ═══════════════════════════════════════════════════════════════════════════
 //  Fetch helpers
 // ═══════════════════════════════════════════════════════════════════════════
@@ -110,17 +192,8 @@ function renderizarGrid() {
 
   empty.style.display = 'none';
 
-  // Decodifica o payload do token salvo para saber as informações do usuário logado (id e role)
-  let usuarioLogado = null;
-  try {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const payloadBase64 = token.split('.')[1];
-      usuarioLogado = JSON.parse(atob(payloadBase64));
-    }
-  } catch (e) {
-    console.error("Erro ao decodificar token do usuário:", e);
-  }
+  
+  const usuarioLogado = getUsuarioLogado();
 
   grid.innerHTML = state.games.map(game => {
     // Busca TODAS as reviews associadas a este jogo específico
@@ -142,27 +215,30 @@ function criarCardHTML(game, reviews, usuarioLogado) {
   const dataFormatada = new Date(game.dataAdicionado || game.createdAt).toLocaleDateString('pt-BR');
 
   // Validação corrigida e blindada contra undefined:
+  const isAdmin = usuarioLogado?.role === 'admin';
+  const currentUserId = usuarioLogado
+    ? (usuarioLogado.userId || usuarioLogado.id || usuarioLogado._id || usuarioLogado.sub)
+    : null;
+
+  // Pega o ID do usuário da review (testando as nomenclaturas mais comuns de Models)
+  function getReviewOwnerId(r) {
+    return r.usuarioId || r.userId || (r.usuario && (r.usuario.id || r.usuario._id)) || (r.user && (r.user.id || r.user._id)) || r.usuario || r.user;
+  }
+
+  // Validação corrigida e blindada contra undefined:
   const jaFezReview = reviews.some(r => {
-    if (!usuarioLogado) return false;
-    
-    // Pega o ID do usuário da review (testando as nomenclaturas mais comuns de Models)
-    const reviewUserId = r.usuarioId || r.userId || (r.usuario && (r.usuario.id || r.usuario._id)) || (r.user && (r.user.id || r.user._id)) || r.usuario || r.user;
-    
-    // Pega o ID do usuário logado vindo do Token
-    const currentUserId = usuarioLogado.id || usuarioLogado._id || usuarioLogado.sub;
-
-    // Só valida se ambos os IDs existirem de fato
-    if (!reviewUserId || !currentUserId) return false;
-
+    if (!currentUserId) return false;
+    const reviewUserId = getReviewOwnerId(r);
+    if (!reviewUserId) return false;
     return reviewUserId.toString() === currentUserId.toString();
   });
 
   // 1. Define a Ação de Review (Garante que o botão renderize como bloco limpo)
   let acaoReviewHTML = '';
   if (jaFezReview) {
-    acaoReviewHTML = `<span style="font-size: 0.78rem; color: #f6ad55; font-style: italic; font-weight: 600; padding: 0.2rem 0;">✓ Você já avaliou</span>`;
+    acaoReviewHTML = `<span class="review__status-ok">✓ Você já avaliou</span>`;
   } else {
-    acaoReviewHTML = `<button class="btn btn--xs btn--outline" style="width: auto; display: inline-flex;" onclick="abrirModalNovaReview('${gId}','${escapeHtml(game.titulo)}')">+ Adicionar review</button>`;
+    acaoReviewHTML = `<button class="btn btn--xs btn--outline" onclick="abrirModalNovaReview('${gId}','${escapeHtml(game.titulo)}')">+ Adicionar review</button>`;
   }
 
   // 2. Monta o corpo do rodapé de reviews
@@ -181,41 +257,51 @@ function criarCardHTML(game, reviews, usuarioLogado) {
     const reviewAtiva = reviews[indexAtivo];
     const dataReview = new Date(reviewAtiva.dataCriacao || reviewAtiva.createdAt).toLocaleDateString('pt-BR');
 
-    // Setas do carrossel se houver mais de uma review
+    
+    const reviewAtivaOwnerId = getReviewOwnerId(reviewAtiva);
+    const isOwnerDaReviewAtiva = !!currentUserId && !!reviewAtivaOwnerId
+      && reviewAtivaOwnerId.toString() === currentUserId.toString();
+
+    let acoesReviewHTML = '';
+    if (isAdmin || isOwnerDaReviewAtiva) {
+      acoesReviewHTML = `
+        <button class="btn btn--xs btn--ghost" onclick="abrirModalEditarReview('${reviewAtiva.id || reviewAtiva._id}')">✏️ Editar</button>
+        <button class="btn btn--xs btn--danger-ghost" onclick="confirmarDelete('review','${reviewAtiva.id || reviewAtiva._id}','${escapeHtml(game.titulo)}')">🗑️ Excluir</button>`;
+    }
+
     let seletorCarrossel = '';
     if (reviews.length > 1) {
       seletorCarrossel = `
-        <div style="display: flex; align-items: center; gap: 0.4rem; background: rgba(0,0,0,0.2); padding: 0.15rem 0.4rem; border-radius: 4px;">
-          <button class="btn btn--xs btn--ghost" style="padding: 0.05rem 0.2rem; font-size: 0.65rem;" onclick="mudarReviewAtiva('${gId}', -1, ${reviews.length})">◀</button>
-          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${indexAtivo + 1}/${reviews.length}</span>
-          <button class="btn btn--xs btn--ghost" style="padding: 0.05rem 0.2rem; font-size: 0.65rem;" onclick="mudarReviewAtiva('${gId}', 1, ${reviews.length})">▶</button>
-        </div>`;
+      <div class="review__carrossel">
+        <button class="btn btn--xs btn--ghost review__carrossel-btn" onclick="mudarReviewAtiva('${gId}', -1, ${reviews.length})">◀</button>
+        <span class="review__carrossel-count">${indexAtivo + 1}/${reviews.length}</span>
+        <button class="btn btn--xs btn--ghost review__carrossel-btn" onclick="mudarReviewAtiva('${gId}', 1, ${reviews.length})">▶</button>
+      </div>`;
     }
 
     footerHTML = `
       <div class="review">
-        <div class="review__header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div class="review__header">
+          <div class="review__header-left">
             <span class="review__label">⭐ Review</span>
             ${seletorCarrossel}
           </div>
           <span class="review__nota">Nota: <strong>${reviewAtiva.nota}</strong>/10</span>
         </div>
         <p class="review__comentario">${escapeHtml(reviewAtiva.comentario)}</p>
-        <div class="review__meta" style="margin-top: 0.5rem;">
+        <div class="review__meta">
           <span>🕐 ${reviewAtiva.horasJogadas}h jogadas</span>
           <span>📅 ${dataReview}</span>
         </div>
-        <div class="review__actions" style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-          <button class="btn btn--xs btn--ghost" onclick="abrirModalEditarReview('${reviewAtiva.id || reviewAtiva._id}')">✏️ Editar</button>
-          <button class="btn btn--xs btn--danger-ghost" onclick="confirmarDelete('review','${reviewAtiva.id || reviewAtiva._id}','${escapeHtml(game.titulo)}')">🗑️ Excluir</button>
+        <div class="review__actions">
+          ${acoesReviewHTML}
         </div>
       </div>`;
   }
 
   // Retorno estruturado aplicando propriedades flex diretas para evitar quebras de CSS do tema original
   return `
-    <article class="card" id="card-${gId}" style="display: flex; flex-direction: column;">
+    <article class="card" id="card-${gId}">
       <header class="card__header">
         <div class="card__badges">
           <span class="badge badge--platform">${escapeHtml(game.plataforma)}</span>
@@ -224,27 +310,28 @@ function criarCardHTML(game, reviews, usuarioLogado) {
         <span class="card__status card__status--${statusClass}">${game.status}</span>
       </header>
 
-      <div class="card__body" style="flex-grow: 1;">
+      <div class="card__body">
         <h2 class="card__title">${escapeHtml(game.titulo)}</h2>
         <p class="card__date">Adicionado em ${dataFormatada}</p>
       </div>
 
-      <div class="card__game-actions" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); gap: 0.5rem; flex-wrap: nowrap;">
-        <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+      <div class="card__game-actions">
+        <div class="card__game-actions-left">
+          ${isAdmin ? `
           <button class="btn btn--xs btn--ghost" onclick="abrirModalEditarGame('${gId}')">✏️ Editar</button>
-          <button class="btn btn--xs btn--danger-ghost" onclick="confirmarDelete('game','${gId}','${escapeHtml(game.titulo)}')">🗑️ Excluir</button>
+          <button class="btn btn--xs btn--danger-ghost" onclick="confirmarDelete('game','${gId}','${escapeHtml(game.titulo)}')">🗑️ Excluir</button>` : ''}
         </div>
-        <div style="flex-shrink: 0; display: flex; justify-content: flex-end;">
+        <div class="card__game-actions-right">
           ${acaoReviewHTML}
         </div>
       </div>
 
-      <footer class="card__footer" style="margin-top: auto;">
+      <footer class="card__footer">
         ${footerHTML}
       </footer>
     </article>`;
-}
 
+}    
 // Função para mudar a review visível ao clicar nas setinhas do card
 function mudarReviewAtiva(gameId, direcao, totalReviews) {
   let novoIndex = carrosselReview[gameId] + direcao;
@@ -434,7 +521,7 @@ function confirmarDelete(tipo, id, nome) {
   } catch (err) {
     console.error('Erro ao excluir:', err);
     // EXIBE O ERRO NA TELA: Transforma o texto do modal temporariamente no erro retornado pelo back
-    msgContainer.innerHTML = `<span style="color: #fc8181; font-weight: 600;">⚠️ ${err.message || 'Erro ao excluir. Permissões insuficientes.'}</span>`;
+    msgContainer.innerHTML = `<span class="modal__error-msg">⚠️ ${err.message || 'Erro ao excluir. Permissões insuficientes.'}</span>`;
     
     // Restaura o texto original após 3.5 segundos para não quebrar o modal
     setTimeout(() => {

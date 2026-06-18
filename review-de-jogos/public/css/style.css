@@ -129,7 +129,7 @@ body {
 }
 
 .card__date { font-size: 0.78rem; color: var(--text-dim); }
-.card__footer { border-top: 1px solid var(--border); }
+.card__footer { border-top: 1px solid var(--border); margin-top: auto; }
 
 /* ─── Badges ───────────────────────────────────────────────────────────────── */
 .badge {
@@ -202,7 +202,41 @@ body {
   font-style: italic;
 }
 
-.review__meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-dim); }
+.review__meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; }
+
+.review__status-ok {
+  font-size: 0.78rem;
+  color: #f6ad55;
+  font-style: italic;
+  font-weight: 600;
+  padding: 0.2rem 0;
+}
+
+.review__header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review__carrossel {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0,0,0,0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.review__carrossel-btn {
+  padding: 0.05rem 0.2rem;
+  font-size: 0.65rem;
+}
+
+.review__carrossel-count {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
 
 /* ─── Sem review ───────────────────────────────────────────────────────────── */
 .no-review {

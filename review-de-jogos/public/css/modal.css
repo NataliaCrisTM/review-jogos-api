@@ -13,6 +13,15 @@
   color: var(--text-muted);
 }
 
+.auth-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-status__nome { font-size: 0.85rem; color: var(--text-muted); }
+.auth-status__nome em { color: var(--accent-light); font-style: normal; }
+
 /* ─── Botões ───────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -75,8 +84,29 @@
 /* ─── Ações do card ────────────────────────────────────────────────────────── */
 .card__game-actions {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
   gap: 0.5rem;
-  padding: 0 1.25rem 0.75rem;
+  flex-wrap: nowrap;
+}
+
+.card__game-actions-left {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.card__game-actions-right {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal__error-msg {
+  color: #fc8181;
+  font-weight: 600;
 }
 
 .review__actions {

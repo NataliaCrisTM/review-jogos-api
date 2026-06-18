@@ -5,7 +5,7 @@ import {
   validarAtualizarReview,
   validarIdReview,
   validarGameIdReview,
-} from '../middlewares/reviewValidator.js';
+} from '../validators/reviewValidator.js';
 import { autenticar } from '../middlewares/authMiddleware.js';
 import { autorizar } from '../middlewares/authorizationMiddleware.js';
 

@@ -4,7 +4,7 @@ import {
   validarCriarGame,
   validarAtualizarGame,
   validarIdGame,
-} from '../middlewares/gameValidator.js';
+} from '../validators/gameValidator.js';
 import { autenticar } from '../middlewares/authMiddleware.js';
 import { autorizar } from '../middlewares/authorizationMiddleware.js';
 

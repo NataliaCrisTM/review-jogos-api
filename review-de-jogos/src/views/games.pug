@@ -9,6 +9,7 @@ block content
         span#game-count 0
         |  jogos na coleção
     .toolbar__right
+      span#auth-status.auth-status
       button.btn.btn--primary#btn-novo-game(onclick='abrirModalGame()') + Novo Jogo
 
   //- ── Grid de cards (preenchido pelo JS) ───────────────────────────────────
@@ -114,5 +115,27 @@ block content
         button.btn.btn--ghost(onclick='fecharModal("modal-confirm")') Cancelar
         button.btn.btn--danger#btn-confirm-delete Confirmar
 
+  //- ══ MODAL — Login ════════════════════════════════════════════════════════
+  .modal-overlay#modal-login(onclick='fecharSeOverlay(event,"modal-login")')
+      .modal.modal--sm
+        .modal__header
+          h2.modal__title Entrar
+          button.modal__close(onclick='fecharModal("modal-login")') ✕
+
+        .modal__body
+          .form-group
+            label.form-label(for='input-login') Login
+            input.form-input#input-login(type='text' placeholder='seu usuário')
+
+          .form-group
+            label.form-label(for='input-senha') Senha
+            input.form-input#input-senha(type='password' placeholder='sua senha')
+
+          p.form-error.form-error--global#erro-login-global
+
+        .modal__footer
+          button.btn.btn--ghost(onclick='fecharModal("modal-login")') Cancelar
+          button.btn.btn--primary#btn-fazer-login(onclick='fazerLogin()') Entrar
+          
 block scripts
   script(src='/js/main.js')
