@@ -23,8 +23,8 @@ export class ReviewController {
 
   static async getByGameId(req, res, next) {
     try {
-      const review = await reviewService.getByGameId(req.params.gameId);
-      res.status(200).json(new ReviewDto(review));
+      const reviews = await reviewService.getByGameId(req.params.gameId);
+      res.status(200).json(reviews.map(r => new ReviewDto(r)));
     } catch (err) {
       next(err);
     }

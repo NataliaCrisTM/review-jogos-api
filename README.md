@@ -1,6 +1,6 @@
 # 🎮 Review de jogos API
 
-Uma API para gerenciar sua coleção pessoal de jogos e reviews, construída com Node.js e Express. Inclui uma interface web interativa em /games-view que permite criar, editar e excluir jogos e reviews diretamente pelo navegador, sem precisar de Postman ou qualquer outra ferramenta.
+Uma API para gerenciar sua coleção pessoal de jogos e reviews, construída com Node.js e Express. Inclui uma interface web interativa em /games-view que permite criar, editar e excluir jogos e reviews diretamente pelo navegador, com login via JWT, sem precisar de Postman ou qualquer outra ferramenta.
 
 ---
 
@@ -9,7 +9,9 @@ Uma API para gerenciar sua coleção pessoal de jogos e reviews, construída com
 - [Sobre o Projeto](#-sobre-o-projeto)
 - [Arquitetura](#-arquitetura)
 - [Como Usar](#-como-usar)
+- [Autenticação e Permissões](#-autenticação-e-permissões)
 - [Interface Web](#-interface-web)
+- [Documentação da API (Swagger)](#-documentação-da-api-swagger)
 - [Rotas da API](#-rotas-da-api)
 - [Exemplos de Requisições](#-exemplos-de-requisições)
 - [Regras de Negócio](#-regras-de-negócio)
@@ -20,32 +22,30 @@ Uma API para gerenciar sua coleção pessoal de jogos e reviews, construída com
 
 ## 💡 Sobre o Projeto
 
-A Review de jogos API permite catalogar jogos com informações como plataforma, gênero e status de progresso (`na fila`, `jogando`, `zerado`, `abandonado`). Cada jogo pode ter uma review associada, com nota, comentário e horas jogadas.
+A Review de jogos API permite catalogar jogos com informações como plataforma, gênero e status de progresso (`na fila`, `jogando`, `zerado`, `abandonado`). Cada jogo pode ter várias reviews associadas — uma por usuário que avaliou.
 
 Há duas formas de uso:
-- **API REST:** endpoints JSON para integração com outros sistemas ou ferramentas como Postman
-- **Interface Web:** página interativa com formulários, modais e cards, consumindo a própria API via `fetch()`
----
+- **API REST:** endpoints JSON para integração com outros sistemas ou ferramentas como Postman, documentados via Swagger
+- **Interface Web:** página interativa com formulários, modais, cards e login, consumindo a própria API via `fetch()`
 
+---
 
 ## 🏗 Arquitetura
 
 O projeto segue uma arquitetura em camadas com fluxo unidirecional de dados:
 
-```
-Requisição → Rota → Validator → Controller → Service → Repository → lowdb (db.json)
-```
+Requisição → Rota → Middlewares (auth/autorização) → Validator → Controller → Service → Repository → MongoDB Atlas
 
 Cada camada tem uma responsabilidade única:
 
 - **Routes** — mapeiam URLs para controllers
+- **Middlewares de auth** — `autenticar` (valida o JWT) e `autorizar` (checa a role) protegem rotas sensíveis antes mesmo do validator
 - **Validators** — validam o payload antes de chegar ao controller
 - **Controllers** — orquestram a requisição e chamam o service
-- **Services** — contêm toda a lógica de negócio e lançam erros com `statusCode`
-- **Repositories** — único ponto de acesso ao banco de dados
+- **Services** — contêm toda a lógica de negócio (incluindo regras de permissão sobre dono de review) e lançam erros com `statusCode`
+- **Repositories** — único ponto de acesso ao banco de dados (driver nativo do MongoDB, sem Mongoose)
 - **DTOs** — formatam o objeto antes de enviar ao cliente
 - **ErrorMiddleware** — captura todos os erros em um único lugar
-
 
 ---
 
@@ -57,58 +57,98 @@ Após iniciar o servidor, você tem acesso a:
 |---|---|
 | API Games | `http://localhost:3000/api/games` |
 | API Reviews | `http://localhost:3000/api/reviews` |
+| API Auth | `http://localhost:3000/api/auth` |
+| Documentação Swagger | `http://localhost:3000/api-docs` |
 | Página Web | `http://localhost:3000/games-view` |
+
+---
+
+## 🔐 Autenticação e Permissões
+
+A API usa autenticação via **JWT** (JSON Web Token). Para acessar rotas protegidas, envie o token no header:
+
+Authorization: Bearer <token>
+
+O token é obtido em `POST /api/auth/login` e expira conforme `JWT_EXPIRES_IN` (padrão: `1h`).
+
+### Quem pode o quê
+
+| Ação | Quem pode |
+|---|---|
+| Ler games/reviews | Qualquer um (rota pública) |
+| Criar/editar/excluir game | Apenas usuários com role `admin` |
+| Criar review | Qualquer usuário autenticado (`admin` ou `user`) |
+| Editar/excluir review | Apenas o autor da review ou um `admin` |
+| Registrar nova conta | Qualquer um — a role é sempre forçada para `user` no servidor; não é possível se autopromover a `admin` enviando `"role": "admin"` no corpo da requisição |
 
 ---
 
 ## 🖥 Interface Web
 
-A página `/games-view` oferece CRUD completo de jogos e reviews sem sair do navegador.
+A página `/games-view` oferece CRUD completo de jogos e reviews sem sair do navegador, incluindo login.
 
 ### Funcionalidades
 
 | Ação | Como funciona |
 |---|---|
-| **Visualizar coleção** | Cards com todas as informações do jogo e sua review |
-| **Novo jogo** | Botão "+ Novo Jogo" abre modal com formulário |
-| **Editar jogo** | Botão ✏️ no card abre modal pré-preenchido |
-| **Excluir jogo** | Botão 🗑️ abre modal de confirmação antes de deletar |
-| **Adicionar review** | Botão aparece no card quando o jogo ainda não tem review |
-| **Editar review** | Botão ✏️ na seção de review do card |
-| **Excluir review** | Botão 🗑️ na seção de review com confirmação |
+| **Login/Logout** | Botão "Entrar" no topo abre um modal; o token fica salvo no `localStorage` |
+| **Visualizar coleção** | Cards com todas as informações do jogo e um carrossel para navegar entre as reviews |
+| **Novo jogo** | Visível apenas para `admin`; abre modal com formulário |
+| **Editar/Excluir jogo** | Botões visíveis apenas para `admin` |
+| **Adicionar review** | Botão aparece no card quando o usuário logado ainda não avaliou aquele jogo |
+| **Editar/Excluir review** | Botões visíveis apenas para o autor da review ativa no carrossel, ou para um `admin` |
 
 ### Como funciona por baixo
 
-- O Pug renderiza a estrutura HTML (toolbar, grid vazio, modais) no servidor
+- O Pug renderiza a estrutura HTML (toolbar, grid vazio, modais, modal de login) no servidor — a grid em si é 100% montada no client
 - Ao carregar a página, `main.js` faz `GET /api/games` e `GET /api/reviews` em paralelo
-- Os cards são montados dinamicamente no navegador com os dados recebidos
-- Criar, editar e excluir chamam os endpoints da API via `fetch()` e atualizam a tela sem recarregar a página
+- O token salvo é decodificado no navegador (decode base64url, seguro para acentos) para saber o `id` e a `role` do usuário logado, e isso controla quais botões aparecem em cada card
+- Criar, editar e excluir chamam os endpoints da API via `fetch()`, anexando o header `Authorization` quando há token salvo, e atualizam a tela sem recarregar a página
 - Validações acontecem no front antes de chamar a API, com mensagens de erro inline em cada campo
+
+---
+
+## 📖 Documentação da API (Swagger)
+
+A API conta com documentação interativa via **OpenAPI/Swagger**, disponível em:
+
+http://localhost:3000/api-docs
+
+Lá é possível ver todos os endpoints, seus parâmetros, exemplos de corpo de requisição/resposta e testar chamadas reais direto pela interface ("Try it out"), sem precisar do Postman.
+
+Para testar rotas protegidas: chame `POST /api/auth/login` pela própria interface, copie o `token` retornado, clique em **Authorize** (canto superior direito) e cole o token (sem o prefixo `Bearer`). A partir daí, toda chamada feita por ali já envia o header de autenticação automaticamente.
 
 ---
 
 ## 📡 Rotas da API
 
-### 🕹 Games — `/api/games`
+### 🔑 Auth — `/api/auth`
 
 | Método | Rota | Descrição | Status |
 |---|---|---|---|
-| `GET` | `/api/games` | Lista todos os jogos | `200` |
-| `GET` | `/api/games/:id` | Busca um jogo por ID | `200` |
-| `POST` | `/api/games` | Cria um novo jogo | `201` |
-| `PUT` | `/api/games/:id` | Atualiza um jogo completo | `200` |
-| `DELETE` | `/api/games/:id` | Remove o jogo e sua review | `204` |
+| `POST` | `/api/auth/register` | Cria uma nova conta (`role` sempre `user`) | `201` |
+| `POST` | `/api/auth/login` | Autentica e retorna um token JWT | `200` |
+
+### 🕹 Games — `/api/games`
+
+| Método | Rota | Descrição | Auth | Status |
+|---|---|---|---|---|
+| `GET` | `/api/games` | Lista todos os jogos | Pública | `200` |
+| `GET` | `/api/games/:id` | Busca um jogo por ID | Pública | `200` |
+| `POST` | `/api/games` | Cria um novo jogo | `admin` | `201` |
+| `PUT` | `/api/games/:id` | Atualiza um jogo completo | `admin` | `200` |
+| `DELETE` | `/api/games/:id` | Remove o jogo e todas as suas reviews | `admin` | `204` |
 
 ### ⭐ Reviews — `/api/reviews`
 
-| Método | Rota | Descrição | Status |
-|---|---|---|---|
-| `GET` | `/api/reviews` | Lista todas as reviews | `200` |
-| `GET` | `/api/reviews/:id` | Busca uma review por ID | `200` |
-| `GET` | `/api/reviews/game/:gameId` | Busca a review de um jogo | `200` |
-| `POST` | `/api/reviews` | Cria uma review | `201` |
-| `PUT` | `/api/reviews/:id` | Atualiza uma review | `200` |
-| `DELETE` | `/api/reviews/:id` | Remove uma review | `204` |
+| Método | Rota | Descrição | Auth | Status |
+|---|---|---|---|---|
+| `GET` | `/api/reviews` | Lista todas as reviews | Pública | `200` |
+| `GET` | `/api/reviews/:id` | Busca uma review por ID | Pública | `200` |
+| `GET` | `/api/reviews/game/:gameId` | Lista as reviews de um jogo (uma por usuário) | Pública | `200` |
+| `POST` | `/api/reviews` | Cria uma review | `admin` ou `user` | `201` |
+| `PUT` | `/api/reviews/:id` | Atualiza uma review | Autor ou `admin` | `200` |
+| `DELETE` | `/api/reviews/:id` | Remove uma review | Autor ou `admin` | `204` |
 
 ### 🌐 Web
 
@@ -120,11 +160,34 @@ A página `/games-view` oferece CRUD completo de jogos e reviews sem sair do nav
 
 ## 📝 Exemplos de Requisições
 
+### Login
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "login": "admin",
+  "senha": "admin321"
+}
+```
+
+**Resposta `200`:**
+```json
+{
+  "sucesso": true,
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+---
+
 ### Criar um jogo
 
 ```http
 POST /api/games
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 {
   "titulo": "The Witcher 3",
@@ -137,12 +200,12 @@ Content-Type: application/json
 **Resposta `201`:**
 ```json
 {
-  "id": "a3f1c2d4-...",
+  "id": "64f1a2b3c4d5e6f7a8b9c0d1",
   "titulo": "The Witcher 3",
   "plataforma": "PC",
   "genero": "RPG",
   "status": "zerado",
-  "dataAdicionado": "2025-01-15T10:30:00.000Z"
+  "dataAdicionado": "2026-01-15T10:30:00.000Z"
 }
 ```
 
@@ -153,9 +216,10 @@ Content-Type: application/json
 ```http
 POST /api/reviews
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 {
-  "gameId": "a3f1c2d4-...",
+  "gameId": "64f1a2b3c4d5e6f7a8b9c0d1",
   "nota": 9.5,
   "comentario": "Obra-prima absoluta. História envolvente e mundo imenso.",
   "horasJogadas": 120
@@ -165,12 +229,13 @@ Content-Type: application/json
 **Resposta `201`:**
 ```json
 {
-  "id": "b7e2d1f5-...",
-  "gameId": "a3f1c2d4-...",
+  "id": "64f1a2b3c4d5e6f7a8b9c0d2",
+  "gameId": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "usuarioId": "64f1a2b3c4d5e6f7a8b9c0aa",
   "nota": 9.5,
   "comentario": "Obra-prima absoluta. História envolvente e mundo imenso.",
   "horasJogadas": 120,
-  "dataCriacao": "2025-01-15T11:00:00.000Z"
+  "dataCriacao": "2026-01-15T11:00:00.000Z"
 }
 ```
 
@@ -179,8 +244,9 @@ Content-Type: application/json
 ### Atualizar um jogo
 
 ```http
-PUT /api/games/a3f1c2d4-...
+PUT /api/games/64f1a2b3c4d5e6f7a8b9c0d1
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 {
   "titulo": "The Witcher 3: Wild Hunt",
@@ -207,12 +273,26 @@ Content-Type: application/json
 
 ---
 
+### Erro de permissão — Resposta `403`
+
+```json
+{
+  "sucesso": false,
+  "mensagem": "Você só pode editar ou excluir as suas próprias reviews."
+}
+```
+
+---
+
 ## 📐 Regras de Negócio
 
-- **Review única por jogo** — cada game pode ter no máximo uma review. Uma segunda tentativa retorna `409 Conflict`.
-- **Cascata ao deletar** — ao remover um game, sua review é deletada automaticamente.
+- **Review única por jogo, por usuário** — cada usuário pode avaliar um mesmo jogo apenas uma vez, mas um jogo pode ter várias reviews (uma de cada usuário que o avaliou). Uma segunda tentativa do mesmo usuário retorna `409 Conflict`.
+- **Cascata ao deletar** — ao remover um game, todas as reviews associadas a ele são deletadas automaticamente.
+- **Permissão sobre review** — apenas o autor da review ou um usuário `admin` pode editá-la ou excluí-la.
+- **Permissão sobre game** — apenas usuários `admin` podem criar, editar ou excluir games.
+- **Role forçada no registro** — ao criar conta via `POST /api/auth/register`, a role é sempre `user`, independente do que for enviado no corpo da requisição.
 - **gameId imutável** — o campo `gameId` de uma review não pode ser alterado via `PUT`.
-- **Campos gerados automaticamente** — `id`, `dataAdicionado` e `dataCriacao` são gerados pelo servidor e ignorados caso enviados pelo cliente.
+- **Campos gerados automaticamente** — `id`, `usuarioId`, `dataAdicionado` e `dataCriacao` são gerados pelo servidor e ignorados caso enviados pelo cliente.
 
 ### Valores válidos para `status`
 
@@ -232,56 +312,126 @@ Content-Type: application/json
 - `status` — obrigatório, um dos 4 valores acima
 
 **Review:**
-- `gameId` — UUID válido de um game existente
+- `gameId` — ID válido (ObjectId do MongoDB) de um game existente
 - `nota` — número entre `0` e `10`
 - `comentario` — obrigatório, mínimo 10 caracteres
 - `horasJogadas` — número maior ou igual a `0`
+
+**Auth:**
+- `login` — obrigatório, único no sistema
+- `senha` — obrigatória, armazenada com hash via `bcrypt`
+- `nome` — obrigatório (apenas no registro)
 
 ---
 
 ## 📁 Estrutura de Pastas
 
-```
 /
+
 ├── public/
+
 │   ├── css/
+
 │   │   ├── style.css           # Estilos base da página web
+
 │   │   └── modal.css           # Estilos dos modais, botões e formulários
+
 │   └── js/
-│       └── main.js             # Lógica CRUD da interface via fetch()
+
+│       └── main.js             # Lógica CRUD + autenticação da interface via fetch()
+
 ├── src/
+
 │   ├── server.js               # Ponto de entrada — app.listen()
-│   ├── app.js                  # Configuração do Express
+
+│   ├── app.js                  # Configuração do Express e montagem das rotas
+
 │   ├── config/
-│   │   └── database.js         # Instância única do lowdb
+
+│   │   ├── database.js         # Conexão com o MongoDB Atlas
+
+│   │   └── swagger.js          # Configuração do swagger-jsdoc (schemas, security scheme)
+
 │   ├── controllers/
+
+│   │   ├── authController.js   # Registro e login
+
 │   │   ├── gameController.js
+
 │   │   ├── reviewController.js
+
 │   │   └── webController.js
+
 │   ├── services/
+
 │   │   ├── gameService.js      # Lógica de negócio dos games
-│   │   └── reviewService.js    # Lógica de negócio das reviews
+
+│   │   └── reviewService.js    # Lógica de negócio das reviews + permissões de dono
+
 │   ├── repositories/
+
 │   │   ├── gameRepository.js   # Acesso ao banco — games
-│   │   └── reviewRepository.js # Acesso ao banco — reviews
+
+│   │   ├── reviewRepository.js # Acesso ao banco — reviews
+
+│   │   └── userRepository.js   # Acesso ao banco — usuários
+
 │   ├── routes/
+
+│   │   ├── authRoutes.js
+
 │   │   ├── gameRoutes.js
+
 │   │   ├── reviewRoutes.js
+
 │   │   └── webRoutes.js
+
 │   ├── middlewares/
-│   │   ├── errorMiddleware.js  # Tratamento centralizado de erros
+
+│   │   ├── errorMiddleware.js          # Tratamento centralizado de erros
+
+│   │   ├── authMiddleware.js           # Valida o JWT (autenticar)
+
+│   │   └── authorizationMiddleware.js  # Valida a role (autorizar)
+
+│   ├── validators/
+
+│   │   ├── authValidator.js
+
 │   │   ├── gameValidator.js
+
 │   │   └── reviewValidator.js
+
+│   ├── models/
+
+│   │   ├── gameModel.js
+
+│   │   ├── reviewModel.js
+
+│   │   └── userModel.js
+
 │   ├── dtos/
+
 │   │   ├── gameDto.js          # Formata a saída dos games
+
 │   │   └── reviewDto.js        # Formata a saída das reviews
+
 │   └── views/
+
 │       ├── layouts/
+
 │       │   └── main.pug        # Layout base HTML
-│       └── games.pug           # Estrutura da interface interativa
-├── db.json                     # Banco de dados (gerado automaticamente)
+
+│       └── games.pug           # Estrutura da interface interativa + modal de login
+
+├── seed.js                     # Script para popular o banco com dados de teste
+
+├── generate-hash.js            # Utilitário para gerar hashes bcrypt manualmente
+
+├── .env                        # MONGO_URI e JWT_SECRET (não versionado)
+
 └── package.json
-```
+
 ---
 
 ## 📦 Padrões de Resposta
@@ -301,8 +451,10 @@ Todas as respostas de erro seguem o formato:
 | `201` | Recurso criado com sucesso |
 | `204` | Recurso deletado (sem corpo) |
 | `400` | Erro de validação |
+| `401` | Não autenticado (token ausente, inválido ou expirado) |
+| `403` | Sem permissão para realizar a ação |
 | `404` | Recurso não encontrado |
-| `409` | Conflito (ex: review duplicada) |
+| `409` | Conflito (ex: login já em uso, review duplicada do mesmo usuário) |
 | `500` | Erro interno do servidor |
 
 ---

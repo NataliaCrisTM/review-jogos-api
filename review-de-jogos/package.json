@@ -20,6 +20,8 @@
     "lowdb": "^7.0.1",
     "mongodb": "^7.3.0",
     "pug": "^3.0.4",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "uninstall": "^0.0.0",
     "uuid": "^14.0.0"
   }

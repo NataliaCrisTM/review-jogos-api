@@ -1,4 +1,6 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import gameRoutes from './routes/gameRoutes.js';
@@ -35,6 +37,7 @@ app.use('/api/auth', authRoutes);                          // ← NOVO
 // ─── Rotas da API ─────────────────────────────────────────────────────────────
 app.use('/api/games', gameRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ─── Rotas Web ────────────────────────────────────────────────────────────────
 app.use('/', webRoutes);
