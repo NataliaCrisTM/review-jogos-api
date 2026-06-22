@@ -9,6 +9,7 @@ const options = {
       description: 'Documentação gerada com Swagger/OpenAPI — Aula 17.',
     },
     servers: [
+      { url: 'https://review-jogos-api.onrender.com' },
       { url: 'http://localhost:3000', description: 'Ambiente local' },
     ],
     components: {
